@@ -18,49 +18,44 @@ import qualified Control.Distributed.Backend.P2P as P2P
 import Types
 import Repl
 
-data NodeConfig = NodeConfig { -- информация, не меняющаяся во время существования ноды
-  selfPid :: ProcessId,
-  replPid :: ProcessId
-}
+data NodeConfig = NodeConfig ProcessId -- информация, не меняющаяся во время существования ноды
 
 data Tick = Tick                -- тип данных для того, чтобы оповещать основной поток тогда,
   deriving (Typeable, Generic)  -- когда надо переслать нодам свое состояние
 instance Binary Tick  -- Tick теперь поддерживает сериализацию
 
-runNode :: NodeConfig -> Flowers -> Process ()
-runNode config@(NodeConfig _ repl) flowers = do
+runNode :: NodeConfig -> Flowers -> Process ()  -- функция выполнения ноды
+runNode config@(NodeConfig repl) flowers = do
   let run = runNode config
-  receiveWait
-
-    [ match (\command ->
+  receiveWait  -- ждем сообщений
+    [ match (\command ->  -- если нам пришло что-то типа Command от REPL
         case command of
-          (Add flower) -> do
-            send repl (Added flower)
-            run $ S.add flower flowers
-          Show -> do
-            send repl (HereUR $ toList flowers)
-            run flowers)
+          (Add flower) -> do  -- команда добавления элемента от пользователя
+            send repl (Added flower)  -- отправить REPLу сообщение, что цветок добавлен
+            run $ S.add flower flowers  -- запускаем ее уже с новым цветком
+          Show -> do  -- запрос показать цветочки
+            send repl (HereUR $ toList flowers)  -- отправить цветочки в виде списка
+            run flowers)  -- ничего не поменялось
 
-    , match (\Tick -> do
-        P2P.nsendPeers "bees" flowers
-        say $ show flowers
+    , match (\Tick -> do  -- сигнал о том, что надо поделиться своим состоянием с другими
+        P2P.nsendPeers "bees" flowers  -- отправить всем пирам цветки
         run flowers)
 
-    , match (\newFlowers -> do
-        run $ newFlowers `union` flowers)
+    , match (\newFlowers -> do  -- кто-то отправил ноде цветочки
+        run $ newFlowers `union` flowers)  -- добавляем новые в базу - по сути обьединение множеств
     ]
   
 spawnNode :: Process ()
 spawnNode = do
-  liftIO $ threadDelay 3000000 -- give other nodes time to register
+  liftIO $ threadDelay 3000000  -- дать bootstrap ноде время для запуска
   let flowers = S.initial :: Flowers  -- инициализирум GSet координат цветков
-  self <- getSelfPid
+  self <- getSelfPid  -- получаем наш Pid чтобы REPL мог посылать нам сообщения
   repl <- spawnLocal $ runRepl self  -- создаем REPL в отдельном потоке
   register "bees" self  -- теперь нода будет получать сообщения из канала "bees"
-  spawnLocal $ forever $ do
+  spawnLocal $ forever $ do  -- запускаем тикер:
     send self Tick  -- оповестить основной поток что надо передать пирам свое состояние
     liftIO $ threadDelay $ 10^6  -- ждемс 0.1 секунды перед тем, как снова отослать состояние
-  runNode (NodeConfig {selfPid=self, replPid=repl}) flowers
+  runNode (NodeConfig repl) flowers
 
 main = do  -- создаем монаду типа IO (), где будем совершать все действия
   [port, bootstrapPort] <- getArgs  -- считываем порт ноды и bootstrap ноды
