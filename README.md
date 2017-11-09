@@ -1,2 +1,2 @@
 # cloud-bees
-Artice in development...
+Standby, article is in development.
