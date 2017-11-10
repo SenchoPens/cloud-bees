@@ -47,11 +47,11 @@ runNode config@(NodeConfig repl) flowers = do
   
 spawnNode :: Process ()
 spawnNode = do
-  liftIO $ threadDelay 3000000       -- дать bootstrap ноде время для запуска
-  let flowers = S.initial :: Flowers -- инициализирум GSet координат цветков
+  liftIO $ threadDelay 3000000  -- дать bootstrap ноде время для запуска
+  let flowers = S.initial :: Flowers  -- инициализирум GSet координат цветков
   self <- getSelfPid                 -- получаем наш Pid чтобы REPL мог посылать нам сообщения
   repl <- spawnLocal $ runRepl self  -- создаем REPL в отдельном потоке
-  register "bees" self               -- теперь нода будет получать сообщения из канала "bees"
+  register "bees" self  -- теперь нода будет получать сообщения из канала "bees"
   spawnLocal $ forever $ do  -- запускаем тикер:
     send self Tick               -- оповестить основной поток что надо передать пирам свое состояние
     liftIO $ threadDelay $ 10^6  -- ждемс 0.1 секунды перед тем, как снова отослать состояние
