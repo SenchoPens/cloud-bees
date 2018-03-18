@@ -18,11 +18,13 @@ import System.Environment (getArgs)
 import Repl
 import Types
 
+-- информация, не меняющаяся во время существования ноды
 newtype NodeConfig =
-  NodeConfig ProcessId -- информация, не меняющаяся во время существования ноды
+  NodeConfig ProcessId
 
+-- тип данных для того, чтобы оповещать основной поток тогда,
 data Tick =
-  Tick -- тип данных для того, чтобы оповещать основной поток тогда,
+  Tick
   deriving (Typeable, Generic) -- когда надо переслать нодам свое состояние
 
 instance Binary Tick -- Tick теперь поддерживает сериализацию
@@ -71,10 +73,11 @@ spawnNode = do
 
 main = do
   [port, bootstrapPort] <- getArgs -- считываем порт ноды и bootstrap ноды
+  let hostName = "127.0.0.1" -- IP ноды
   P2P.bootstrap -- функция инициализации ноды
-    "127.0.0.1"
-    port -- IP и порт ноды
-    (\p -> ("127.0.0.1", p))
+    hostName
+    port -- порт ноды
+    (\port -> (hostName, port))
     initRemoteTable -- создаем remote table
-    [P2P.makeNodeId ("127.0.0.1:" ++ bootstrapPort)] -- список bootstrap нод
-    spawnNode -- передаем функцию запуска ноды, ее код мы напишем потом
+    [P2P.makeNodeId (hostName ++ ":" ++ bootstrapPort)] -- список bootstrap нод
+    spawnNode -- передаем функцию запуска ноды

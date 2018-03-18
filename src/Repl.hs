@@ -14,19 +14,21 @@ import Text.Read (readMaybe)
 
 import Types
 
+-- тип комманды
 data Command
   = Add Flower
-  | Show -- тип комманды
-  deriving (Typeable, Generic, Read) -- с помощью Read можно считывать тип комманды из REPL,
+  | Show
+  deriving (Typeable, Generic, Read) -- с помощью Read можно считывать комманду из REPL
 
-instance Binary Command -- как будто это обычная команда
+instance Binary Command
 
+-- тип ответа от ноды
 data Answer
   = Added Flower
   | HereUR FlowerList
-  deriving (Typeable, Generic, Show) -- аналогично с Command - просто выводим тип данных
+  deriving (Typeable, Generic, Show)
 
-instance Binary Answer -- как будто это просто прикольный текст
+instance Binary Answer
 
 runRepl :: ProcessId -> Process ()
 runRepl parent = do
