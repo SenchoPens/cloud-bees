@@ -18,7 +18,7 @@ import System.Environment (getArgs)
 import Repl
 import Types
 
-data NodeConfig =
+newtype NodeConfig =
   NodeConfig ProcessId -- информация, не меняющаяся во время существования ноды
 
 data Tick =
