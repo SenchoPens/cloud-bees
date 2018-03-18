@@ -74,6 +74,7 @@ main = do
   P2P.bootstrap -- функция инициализации ноды
     "127.0.0.1"
     port -- IP и порт ноды
-    [P2P.makeNodeId ("127.0.0.1:" ++ bootstrapPort)] -- список bootstrap нод
+    (\p -> ("127.0.0.1", p))
     initRemoteTable -- создаем remote table
+    [P2P.makeNodeId ("127.0.0.1:" ++ bootstrapPort)] -- список bootstrap нод
     spawnNode -- передаем функцию запуска ноды, ее код мы напишем потом
